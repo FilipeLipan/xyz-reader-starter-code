@@ -24,7 +24,7 @@ allprojects {
 
     ext {
         androidSupportVersion = "25.4.0"
-
+        glideVersion = '4.3.1'
     }
 }
 

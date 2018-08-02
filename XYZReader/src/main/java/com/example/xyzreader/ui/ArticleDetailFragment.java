@@ -250,7 +250,7 @@ public class ArticleDetailFragment extends Fragment implements
 
                         @Override
                         public void onErrorResponse(VolleyError volleyError) {
-
+                            Log.d("","");
                         }
                     });
         } else {
