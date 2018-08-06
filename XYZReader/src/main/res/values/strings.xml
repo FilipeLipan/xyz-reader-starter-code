@@ -10,5 +10,6 @@
     <string name="up">Up</string>
     <string name="book_thumbnail">book thumbnail</string>
     <string name="by_author">by %1$s</string>
+    <string name="article_transitions_name">article_transition_name</string>
 
 </resources>

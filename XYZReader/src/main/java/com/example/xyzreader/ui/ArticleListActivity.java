@@ -8,8 +8,10 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
@@ -149,15 +151,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
-            final ViewHolder vh = new ViewHolder(view);
-            view.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                    startActivity(NewArticleDetailActivity.getIntent(ArticleListActivity.this, getArticleVo(vh.getAdapterPosition())));
-                }
-            });
-            return vh;
+            return new ViewHolder(view);
         }
 
         private Date parsePublishedDate() {
@@ -172,7 +166,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
+        public void onBindViewHolder(final ViewHolder holder, final int position) {
             mCursor.moveToPosition(position);
             holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
             Date publishedDate = parsePublishedDate();
@@ -182,6 +176,18 @@ public class ArticleListActivity extends AppCompatActivity implements
                     .load(mCursor.getString(ArticleLoader.Query.THUMB_URL))
                     .apply(new RequestOptions().centerCrop().placeholder(R.color.photo_placeholder))
                     .into(holder.thumbnailView);
+            holder.root.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    ActivityOptionsCompat options = ActivityOptionsCompat.
+                            makeSceneTransitionAnimation(ArticleListActivity.this,
+                                    holder.thumbnailView,
+                                    getString(R.string.article_transitions_name));
+                    startActivity(
+                            NewArticleDetailActivity.getIntent(ArticleListActivity.this, getArticleVo(position)),
+                            options.toBundle());
+                }
+            });
         }
 
         @Override
@@ -194,12 +200,14 @@ public class ArticleListActivity extends AppCompatActivity implements
         public ImageView thumbnailView;
         public TextView titleView;
         public TextView subtitleView;
+        public CardView root;
 
         public ViewHolder(View view) {
             super(view);
             thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
             titleView = (TextView) view.findViewById(R.id.article_title);
             subtitleView = (TextView) view.findViewById(R.id.article_subtitle);
+            root = (CardView) view.findViewById(R.id.root);
         }
     }
 }
