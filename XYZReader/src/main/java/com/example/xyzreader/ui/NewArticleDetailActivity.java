@@ -1,7 +1,10 @@
 package com.example.xyzreader.ui;
 
+import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -21,7 +24,9 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.xyzreader.R;
+import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.ArticleVO;
+import com.example.xyzreader.data.ItemsContract;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -29,11 +34,12 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-public class NewArticleDetailActivity extends AppCompatActivity {
+public class NewArticleDetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = "NewArticleDetail";
 
     public static final String ARG_ARTICLE_VO = "article-vo";
+    private Cursor mCursor;
     private ArticleVO mArticleVo;
     private Toolbar mToolbar;
     private TextView mBylineView;
@@ -65,6 +71,7 @@ public class NewArticleDetailActivity extends AppCompatActivity {
             if (getIntent() != null && getIntent().hasExtra(ARG_ARTICLE_VO)) {
                 mArticleVo = getIntent().getParcelableExtra(ARG_ARTICLE_VO);
                 setUpViews();
+                getLoaderManager().initLoader(0, null, this);
             }
         }
     }
@@ -123,7 +130,7 @@ public class NewArticleDetailActivity extends AppCompatActivity {
                                 + "</b>"));
 
             }
-//            mBodyView.setText(Html.fromHtml(mArticleVo.getBody().replaceAll("(\r\n|\n)", "<br />")));
+
 
             Glide.with(this)
                     .load(mArticleVo.getThumbUrl())
@@ -156,5 +163,28 @@ public class NewArticleDetailActivity extends AppCompatActivity {
             Log.i(TAG, "passing today's date");
             return new Date();
         }
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        Long mItemId = ItemsContract.Items.getItemId(ItemsContract.Items.buildItemUri(mArticleVo.getId()));
+        return ArticleLoader.newInstanceForItemId(this, mItemId);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        mCursor = cursor;
+        if (mCursor != null && !mCursor.moveToFirst()) {
+            Log.e(TAG, "Error reading item detail cursor");
+            mCursor.close();
+            mCursor = null;
+        }
+
+        mBodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY).replaceAll("(\r\n|\n)", "<br />")));
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        mCursor = null;
     }
 }
