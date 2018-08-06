@@ -1,158 +1,160 @@
 package com.example.xyzreader.ui;
 
-import android.app.LoaderManager;
-import android.content.Loader;
-import android.database.Cursor;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.app.ShareCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.format.DateUtils;
-import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.xyzreader.R;
-import com.example.xyzreader.data.ArticleLoader;
-import com.example.xyzreader.data.ItemsContract;
+import com.example.xyzreader.data.ArticleVO;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 
-public class NewArticleDetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class NewArticleDetailActivity extends AppCompatActivity {
 
     private static final String TAG = "NewArticleDetail";
 
-    public static final String ARG_ITEM_ID = "item_id";
-    private static final float PARALLAX_FACTOR = 1.25f;
-
-    private Cursor mCursor;
-    private long mItemId;
-    private int mMutedColor = 0xFF333333;
-    //    private ObservableScrollView mScrollView;
-//    private DrawInsetsFrameLayout mDrawInsetsFrameLayout;
-    private ColorDrawable mStatusBarColorDrawable;
-
-    private int mTopInset;
-    //    private View mPhotoContainerView;
+    public static final String ARG_ARTICLE_VO = "article-vo";
+    private ArticleVO mArticleVo;
+    private Toolbar mToolbar;
+    private TextView mBylineView;
     private ImageView mPhotoView;
-    private int mScrollY;
-    private boolean mIsCard = false;
-    private int mStatusBarFullOpacityBottom;
+    private TextView mBodyView;
+    private CollapsingToolbarLayout mCollapsingToolbarLayout;
 
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss");
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss", Locale.getDefault());
     // Use default locale format
     private SimpleDateFormat outputFormat = new SimpleDateFormat();
     // Most time functions can only handle 1902 - 2037
     private GregorianCalendar START_OF_EPOCH = new GregorianCalendar(2,1,1);
 
+    public static Intent getIntent(Context context, ArticleVO articleVO){
+        Intent intent = new Intent(context, NewArticleDetailActivity.class);
+        intent.putExtra(ARG_ARTICLE_VO, articleVO);
+        return intent;
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_article_detail_activity);
+        bindViews();
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         if (savedInstanceState == null) {
-            if (getIntent() != null && getIntent().getData() != null) {
-                mItemId = ItemsContract.Items.getItemId(getIntent().getData());
+            if (getIntent() != null && getIntent().hasExtra(ARG_ARTICLE_VO)) {
+                mArticleVo = getIntent().getParcelableExtra(ARG_ARTICLE_VO);
+                setUpViews();
             }
         }
-
-
-    }
-
-
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        return ArticleLoader.newInstanceForItemId(this, mItemId);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        mCursor = cursor;
-        if (mCursor != null && !mCursor.moveToFirst()) {
-            Log.e(TAG, "Error reading item detail cursor");
-            mCursor.close();
-            mCursor = null;
-        }
-
-        bindViews();
     }
 
     private void bindViews() {
-        TextView titleView = (TextView) findViewById(R.id.article_title);
-        TextView bylineView = (TextView) findViewById(R.id.article_byline);
-        bylineView.setMovementMethod(new LinkMovementMethod());
-        TextView bodyView = (TextView) findViewById(R.id.article_body);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mBylineView = (TextView) findViewById(R.id.article_byline);
+        mCollapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_tollbar);
+        mPhotoView = (ImageView) findViewById(R.id.photo);
+        mBodyView = (TextView) findViewById(R.id.article_body);
+        ViewGroup view = (ViewGroup) findViewById(R.id.root_container);
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int viewId = view.getId();
+            }
+        });
 
+        AppBarLayout appBarLayout = (AppBarLayout) findViewById(R.id.main_appbar_layout);
+        appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                if (verticalOffset == 0) {
+                    // Fully expanded
+                    mBylineView.setVisibility(View.VISIBLE);
+                } else {
+                    // Not fully expanded or collapsed
+                    mBylineView.setVisibility(View.INVISIBLE);
+                }
+            }
+        });
+    }
 
-        bodyView.setTypeface(Typeface.createFromAsset(getResources().getAssets(), "Rosario-Regular.ttf"));
+    private void setUpViews() {
 
-        if (mCursor != null) {
-            mRootView.setAlpha(0);
-            mRootView.setVisibility(View.VISIBLE);
-            mRootView.animate().alpha(1);
-            titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
+        mBodyView.setTypeface(Typeface.createFromAsset(getResources().getAssets(), "Rosario-Regular.ttf"));
+
+        if (mArticleVo != null) {
+            mCollapsingToolbarLayout.setTitle(mArticleVo.getTitle());
             Date publishedDate = parsePublishedDate();
             if (!publishedDate.before(START_OF_EPOCH.getTime())) {
-                bylineView.setText(Html.fromHtml(
+                mBylineView.setText(Html.fromHtml(
                         DateUtils.getRelativeTimeSpanString(
                                 publishedDate.getTime(),
                                 System.currentTimeMillis(), DateUtils.HOUR_IN_MILLIS,
                                 DateUtils.FORMAT_ABBREV_ALL).toString()
-                                + " by <font color='#ffffff'>"
-                                + mCursor.getString(ArticleLoader.Query.AUTHOR)
-                                + "</font>"));
+                                + " by <b>"
+                                + mArticleVo.getAuthor()
+                                + "</b>"));
 
             } else {
                 // If date is before 1902, just show the string
-                bylineView.setText(Html.fromHtml(
-                        outputFormat.format(publishedDate) + " by <font color='#ffffff'>"
-                                + mCursor.getString(ArticleLoader.Query.AUTHOR)
-                                + "</font>"));
+                mBylineView.setText(Html.fromHtml(
+                        outputFormat.format(publishedDate) + " by <b>"
+                                + mArticleVo.getAuthor()
+                                + "</b>"));
 
             }
-            bodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY).replaceAll("(\r\n|\n)", "<br />")));
-//            ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
-//                    .get(mCursor.getString(ArticleLoader.Query.PHOTO_URL), new ImageLoader.ImageListener() {
-//                        @Override
-//                        public void onResponse(ImageLoader.ImageContainer imageContainer, boolean b) {
-//                            Bitmap bitmap = imageContainer.getBitmap();
-//                            if (bitmap != null) {
-//                                Palette p = Palette.generate(bitmap, 12);
-//                                mMutedColor = p.getDarkMutedColor(0xFF333333);
-//                                mPhotoView.setImageBitmap(imageContainer.getBitmap());
-//                                mRootView.findViewById(R.id.meta_bar)
-//                                        .setBackgroundColor(mMutedColor);
-//                                updateStatusBar();
-//                            }
-//                        }
-//
-//                        @Override
-//                        public void onErrorResponse(VolleyError volleyError) {
-//                            Log.d("","");
-//                        }
-//                    });
+            mBodyView.setText(Html.fromHtml(mArticleVo.getBody().replaceAll("(\r\n|\n)", "<br />")));
+
             Glide.with(this)
-                    .load(mCursor.getString(ArticleLoader.Query.THUMB_URL))
+                    .load(mArticleVo.getThumbUrl())
                     .apply(new RequestOptions().centerCrop().placeholder(R.color.photo_placeholder))
                     .into(mPhotoView);
+
+            findViewById(R.id.share_fab).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    startActivity(Intent.createChooser(ShareCompat.IntentBuilder.from(NewArticleDetailActivity.this)
+                            .setType("text/plain")
+                            .setText(mArticleVo.getTitle())
+                            .getIntent(), getString(R.string.action_share)));
+                }
+            });
+
         } else {
-            mRootView.setVisibility(View.GONE);
-            titleView.setText("N/A");
-            bylineView.setText("N/A" );
-            bodyView.setText("N/A");
+            getSupportActionBar().setTitle("N/A");
+            mBylineView.setText("N/A" );
+            mBodyView.setText("N/A");
         }
     }
 
-    @Override
-    public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        mCursor = null;
+    private Date parsePublishedDate() {
+        try {
+            String date = mArticleVo.getPublishedDate();
+            return dateFormat.parse(date);
+        } catch (ParseException ex) {
+            Log.e(TAG, ex.getMessage());
+            Log.i(TAG, "passing today's date");
+            return new Date();
+        }
     }
 }

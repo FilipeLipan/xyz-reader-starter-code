@@ -7,19 +7,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
-import android.text.format.DateUtils;
 import android.util.Log;
-import android.util.TypedValue;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -29,7 +23,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
-import com.example.xyzreader.data.ItemsContract;
+import com.example.xyzreader.data.ArticleVO;
 import com.example.xyzreader.data.UpdaterService;
 
 import java.text.ParseException;
@@ -37,12 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-/**
- * An activity representing a list of Articles. This activity has different presentations for
- * handset and tablet-size devices. On handsets, the activity presents a list of items, which when
- * touched, lead to a {@link ArticleDetailActivity} representing item details. On tablets, the
- * activity presents a grid of items as cards.
- */
+
 public class ArticleListActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -146,6 +135,17 @@ public class ArticleListActivity extends AppCompatActivity implements
             return mCursor.getLong(ArticleLoader.Query._ID);
         }
 
+        public ArticleVO getArticleVo(int position) {
+            mCursor.moveToPosition(position);
+            ArticleVO articleVO =  new ArticleVO();
+            return articleVO.setId(mCursor.getLong(ArticleLoader.Query._ID))
+                    .setAuthor(mCursor.getString(ArticleLoader.Query.AUTHOR))
+                    .setTitle(mCursor.getString(ArticleLoader.Query.TITLE))
+                    .setPublishedDate(mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE))
+                    .setBody(mCursor.getString(ArticleLoader.Query.BODY))
+                    .setThumbUrl(mCursor.getString(ArticleLoader.Query.THUMB_URL));
+        }
+
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
@@ -153,8 +153,8 @@ public class ArticleListActivity extends AppCompatActivity implements
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startActivity(new Intent(Intent.ACTION_VIEW,
-                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))));
+
+                    startActivity(NewArticleDetailActivity.getIntent(ArticleListActivity.this, getArticleVo(vh.getAdapterPosition())));
                 }
             });
             return vh;

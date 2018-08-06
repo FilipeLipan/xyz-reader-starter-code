@@ -23,7 +23,7 @@ allprojects {
     }
 
     ext {
-        androidSupportVersion = "25.4.0"
+        androidSupportVersion = "23.3.0"
         glideVersion = '4.3.1'
     }
 }
