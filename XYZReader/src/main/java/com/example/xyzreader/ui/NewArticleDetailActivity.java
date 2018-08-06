@@ -167,8 +167,7 @@ public class NewArticleDetailActivity extends AppCompatActivity implements Loade
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        Long mItemId = ItemsContract.Items.getItemId(ItemsContract.Items.buildItemUri(mArticleVo.getId()));
-        return ArticleLoader.newInstanceForItemId(NewArticleDetailActivity.this, mItemId);
+        return ArticleLoader.newInstanceForItemId(NewArticleDetailActivity.this, mArticleVo.getId());
     }
 
     @Override
