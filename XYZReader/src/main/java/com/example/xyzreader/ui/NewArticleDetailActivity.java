@@ -168,7 +168,7 @@ public class NewArticleDetailActivity extends AppCompatActivity implements Loade
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         Long mItemId = ItemsContract.Items.getItemId(ItemsContract.Items.buildItemUri(mArticleVo.getId()));
-        return ArticleLoader.newInstanceForItemId(this, mItemId);
+        return ArticleLoader.newInstanceForItemId(NewArticleDetailActivity.this, mItemId);
     }
 
     @Override
@@ -180,7 +180,9 @@ public class NewArticleDetailActivity extends AppCompatActivity implements Loade
             mCursor = null;
         }
 
-        mBodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY).replaceAll("(\r\n|\n)", "<br />")));
+        if(mCursor != null) {
+            mBodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY).replaceAll("(\r\n|\n)", "<br />")));
+        }
     }
 
     @Override

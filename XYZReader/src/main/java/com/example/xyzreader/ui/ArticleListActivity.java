@@ -120,7 +120,6 @@ public class ArticleListActivity extends AppCompatActivity implements
 //                    .setBody(cursor.getString(ArticleLoader.Query.BODY))
                     .setThumbUrl(cursor.getString(ArticleLoader.Query.THUMB_URL)));
         }
-        cursor.close();
         Adapter adapter = new Adapter(this, articlesVO);
         adapter.setHasStableIds(true);
         mRecyclerView.setAdapter(adapter);
