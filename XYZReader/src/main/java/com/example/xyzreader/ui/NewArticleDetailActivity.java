@@ -123,7 +123,7 @@ public class NewArticleDetailActivity extends AppCompatActivity {
                                 + "</b>"));
 
             }
-            mBodyView.setText(Html.fromHtml(mArticleVo.getBody().replaceAll("(\r\n|\n)", "<br />")));
+//            mBodyView.setText(Html.fromHtml(mArticleVo.getBody().replaceAll("(\r\n|\n)", "<br />")));
 
             Glide.with(this)
                     .load(mArticleVo.getThumbUrl())

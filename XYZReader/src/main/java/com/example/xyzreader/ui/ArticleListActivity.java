@@ -30,8 +30,10 @@ import com.example.xyzreader.data.UpdaterService;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 
 
 public class ArticleListActivity extends AppCompatActivity implements
@@ -108,7 +110,18 @@ public class ArticleListActivity extends AppCompatActivity implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        Adapter adapter = new Adapter(this, cursor);
+        List<ArticleVO> articlesVO = new ArrayList<>();
+        while (cursor.moveToNext()) {
+            ArticleVO articleVO =  new ArticleVO();
+            articlesVO.add(articleVO.setId(cursor.getLong(ArticleLoader.Query._ID))
+                    .setAuthor(cursor.getString(ArticleLoader.Query.AUTHOR))
+                    .setTitle(cursor.getString(ArticleLoader.Query.TITLE))
+                    .setPublishedDate(cursor.getString(ArticleLoader.Query.PUBLISHED_DATE))
+//                    .setBody(cursor.getString(ArticleLoader.Query.BODY))
+                    .setThumbUrl(cursor.getString(ArticleLoader.Query.THUMB_URL)));
+        }
+        cursor.close();
+        Adapter adapter = new Adapter(this, articlesVO);
         adapter.setHasStableIds(true);
         mRecyclerView.setAdapter(adapter);
         int columnCount = getResources().getInteger(R.integer.list_column_count);
@@ -123,29 +136,17 @@ public class ArticleListActivity extends AppCompatActivity implements
     }
 
     private class Adapter extends RecyclerView.Adapter<ViewHolder> {
-        private Cursor mCursor;
+        private List<ArticleVO> mArticlesVO;
         private Context mContext;
 
-        public Adapter(Context context, Cursor cursor) {
-            mCursor = cursor;
+        public Adapter(Context context, List<ArticleVO> articles) {
+            mArticlesVO = articles;
             mContext = context;
         }
 
         @Override
         public long getItemId(int position) {
-            mCursor.moveToPosition(position);
-            return mCursor.getLong(ArticleLoader.Query._ID);
-        }
-
-        public ArticleVO getArticleVo(int position) {
-            mCursor.moveToPosition(position);
-            ArticleVO articleVO =  new ArticleVO();
-            return articleVO.setId(mCursor.getLong(ArticleLoader.Query._ID))
-                    .setAuthor(mCursor.getString(ArticleLoader.Query.AUTHOR))
-                    .setTitle(mCursor.getString(ArticleLoader.Query.TITLE))
-                    .setPublishedDate(mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE))
-                    .setBody(mCursor.getString(ArticleLoader.Query.BODY))
-                    .setThumbUrl(mCursor.getString(ArticleLoader.Query.THUMB_URL));
+            return position;
         }
 
         @Override
@@ -154,26 +155,15 @@ public class ArticleListActivity extends AppCompatActivity implements
             return new ViewHolder(view);
         }
 
-        private Date parsePublishedDate() {
-            try {
-                String date = mCursor.getString(ArticleLoader.Query.PUBLISHED_DATE);
-                return dateFormat.parse(date);
-            } catch (ParseException ex) {
-                Log.e(TAG, ex.getMessage());
-                Log.i(TAG, "passing today's date");
-                return new Date();
-            }
-        }
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, final int position) {
-            mCursor.moveToPosition(position);
-            holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
-            Date publishedDate = parsePublishedDate();
-            holder.subtitleView.setText(getString(R.string.by_author, mCursor.getString(ArticleLoader.Query.AUTHOR)));
+            final ArticleVO articleVO = mArticlesVO.get(position);
+            holder.titleView.setText(articleVO.getTitle());
+            holder.subtitleView.setText(getString(R.string.by_author, articleVO.getAuthor()));
 
             Glide.with(mContext)
-                    .load(mCursor.getString(ArticleLoader.Query.THUMB_URL))
+                    .load(articleVO.getThumbUrl())
                     .apply(new RequestOptions().centerCrop().placeholder(R.color.photo_placeholder))
                     .into(holder.thumbnailView);
             holder.root.setOnClickListener(new View.OnClickListener() {
@@ -184,7 +174,7 @@ public class ArticleListActivity extends AppCompatActivity implements
                                     holder.thumbnailView,
                                     getString(R.string.article_transitions_name));
                     startActivity(
-                            NewArticleDetailActivity.getIntent(ArticleListActivity.this, getArticleVo(position)),
+                            NewArticleDetailActivity.getIntent(ArticleListActivity.this, articleVO),
                             options.toBundle());
                 }
             });
@@ -192,7 +182,11 @@ public class ArticleListActivity extends AppCompatActivity implements
 
         @Override
         public int getItemCount() {
-            return mCursor.getCount();
+            if(mArticlesVO == null){
+                return 0;
+            }else {
+                return mArticlesVO.size();
+            }
         }
     }
 
